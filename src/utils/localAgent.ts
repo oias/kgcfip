@@ -100,7 +100,7 @@ async function agentFetch(
 export async function probeLocalAgent(port: number = DEFAULT_AGENT_PORT): Promise<AgentProbeResult> {
     // 从用户设置的端口开始，依次向后探测（服务端口被占用会自动 +1）
     const attempts = Array.from({ length: PROBE_PORT_RANGE }, (_, i) => port + i).map(async (p) => {
-        const baseUrl = `http://127.0.0.1:${p}`;
+        const baseUrl = `http://192.168.31.124:${p}`;
         try {
             const res = await agentFetch(baseUrl, '/status', { method: 'GET' }, 2500);
             if (!res.ok) return null;
