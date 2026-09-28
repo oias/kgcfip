@@ -87,23 +87,23 @@ export function ScannerConfig({ cfIps, onScanComplete }: IpScannerConfigAndContr
     const [agentActive, setAgentActive] = useState(false);
 
     /** 探测本机 127.0.0.1 上的 Agent 服务 */
-    const checkAgent = useCallback(async (port: number, silent = false) => {
-        setAgentChecking(true);
-        try {
-            const r = await probeLocalAgent(port);
-            setAgentProbe(r);
-            if (r.online && !silent) showToast('已连接到本地 Agent 服务', 'success');
-        } catch {
-            setAgentProbe({ online: false, reason: 'offline' });
-        } finally {
-            setAgentChecking(false);
-        }
-    }, [showToast]);
+    const checkAgent = useCallback(async (port: number, host: string, silent = false) => {
+    setAgentChecking(true);
+    try {
+        const r = await probeLocalAgent(port, host);
+        setAgentProbe(r);
+        if (r.online && !silent) showToast(`已连接到 Agent 服务 (${host}:${port})`, 'success');
+    } catch {
+        setAgentProbe({ online: false, reason: 'offline' });
+    } finally {
+        setAgentChecking(false);
+    }
+}, [showToast]);
 
     // 启动 & 端口变更：探测本地服务
     useEffect(() => {
-        void checkAgent(Number(agentPort) || DEFAULT_AGENT_PORT, true);
-    }, [checkAgent, agentPort]);
+        void checkAgent(Number(agentPort) || DEFAULT_AGENT_PORT, agentHost || '127.0.0.1', true);
+}, [checkAgent, agentPort, agentHost]);
 
     // ---------- 浏览器端测速可用性自检 ----------
     // 浏览器无法为任意 IP 设置 TLS SNI，只能依赖会失效的第三方泛解析域名；
@@ -709,7 +709,7 @@ export function ScannerConfig({ cfIps, onScanComplete }: IpScannerConfigAndContr
                             </div>
 
                             <button
-                                onClick={() => void checkAgent(Number(agentPort) || DEFAULT_AGENT_PORT)}
+                                onClick={() => void checkAgent(Number(agentPort) || DEFAULT_AGENT_PORT, agentHost || '127.0.0.1')}
                                 disabled={agentChecking || isScanning}
                                 className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-none"
                             >
@@ -719,25 +719,38 @@ export function ScannerConfig({ cfIps, onScanComplete }: IpScannerConfigAndContr
                         </div>
 
                         <div className="px-4 py-3">
-                            {/* 本地服务端口设置（保存在浏览器本地） */}
-                            <div className="flex items-center gap-2 mb-3">
-                                <label htmlFor="agent-port" className="text-xs text-gray-600 dark:text-gray-400 flex-none">本地服务端口</label>
-                                <input
-                                    id="agent-port"
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={agentPort}
-                                    onChange={(e) => {
-                                        const v = e.target.value.replace(/[^\d]/g, '').slice(0, 5);
-                                        setAgentPort(v);
-                                        localStorage.setItem('LOCAL_AGENT_PORT', v);
-                                    }}
-                                    placeholder={String(DEFAULT_AGENT_PORT)}
-                                    className="w-24 px-2.5 py-1.5 text-xs font-mono rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
-                                    disabled={isScanning || agentChecking}
-                                />
-                                <span className="text-xs text-gray-400 dark:text-gray-500">默认 {DEFAULT_AGENT_PORT}</span>
-                            </div>
+                            {/* Agent 地址 + 端口设置（保存在浏览器本地） */}
+<div className="flex flex-wrap items-center gap-2 mb-3">
+    <label className="text-xs text-gray-600 dark:text-gray-400 flex-none">Agent 地址</label>
+    <input
+        type="text"
+        value={agentHost}
+        onChange={(e) => {
+            const v = e.target.value.trim();
+            setAgentHost(v);
+            localStorage.setItem('LOCAL_AGENT_HOST', v);
+        }}
+        placeholder="127.0.0.1"
+        className="w-36 px-2.5 py-1.5 text-xs font-mono rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
+        disabled={isScanning || agentChecking}
+    />
+    <label className="text-xs text-gray-600 dark:text-gray-400 flex-none">端口</label>
+    <input
+        id="agent-port"
+        type="text"
+        inputMode="numeric"
+        value={agentPort}
+        onChange={(e) => {
+            const v = e.target.value.replace(/[^\d]/g, '').slice(0, 5);
+            setAgentPort(v);
+            localStorage.setItem('LOCAL_AGENT_PORT', v);
+        }}
+        placeholder={String(DEFAULT_AGENT_PORT)}
+        className="w-24 px-2.5 py-1.5 text-xs font-mono rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
+        disabled={isScanning || agentChecking}
+    />
+    <span className="text-xs text-gray-400 dark:text-gray-500">默认 127.0.0.1:{DEFAULT_AGENT_PORT}</span>
+</div>
 
                             {!agentProbe?.online && (
                                 <>
