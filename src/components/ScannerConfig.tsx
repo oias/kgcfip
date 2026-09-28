@@ -78,6 +78,9 @@ export function ScannerConfig({ cfIps, onScanComplete }: IpScannerConfigAndContr
     const [agentPort, setAgentPort] = useState<string>(
         () => localStorage.getItem('LOCAL_AGENT_PORT') || String(DEFAULT_AGENT_PORT)
     );
+    const [agentHost, setAgentHost] = useState<string>(
+    () => localStorage.getItem('LOCAL_AGENT_HOST') || '127.0.0.1'
+    );
     const agentStopRef = useRef(false);
     const agentModeRef = useRef(false);
     // 当前这一轮是否走本地 Agent（需要触发重渲染以隐藏不支持的暂停按钮）
